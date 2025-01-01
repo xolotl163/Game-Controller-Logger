@@ -1,8 +1,8 @@
 import csv
 import json
-import time
 import pygame
 import tkinter as tk
+from datetime import datetime
 from tkinter import simpledialog, messagebox, filedialog, scrolledtext
 
 def get_controllers_list():
@@ -92,7 +92,7 @@ def main():
                         running = False
                 elif event.type == pygame.JOYBUTTONDOWN:
                     pressed_button = event.button
-                    timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
                     data = [timestamp, player_name, current_game, current_controller.get_name(), 'button', pressed_button]
                     writer.writerow(data)
                     csv_file.flush()
@@ -102,7 +102,7 @@ def main():
                     axis = event.axis
                     value = event.value
                     if abs(value) > sensitivity_threshold:  # Only register significant movements
-                        timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
                         data = [timestamp, player_name, current_game, current_controller.get_name(), f'axis_{axis}', value]
                         writer.writerow(data)
                         csv_file.flush()
@@ -111,7 +111,7 @@ def main():
                 elif event.type == pygame.JOYHATMOTION:
                     hat = event.hat
                     value = event.value
-                    timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
                     data = [timestamp, player_name, current_game, current_controller.get_name(), f'hat_{hat}', value]
                     writer.writerow(data)
                     csv_file.flush()
