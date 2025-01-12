@@ -1,4 +1,5 @@
 import csv
+import time
 import json
 import pygame
 import tkinter as tk
@@ -69,8 +70,9 @@ def main():
 
     # Open CSV file for logging
     csv_file_name = f"{file_path}/{player_name}_buttons_pressed.csv"
+    initial_time = time.perf_counter()
     with open(csv_file_name, mode='a', newline='') as csv_file:
-        fieldnames = ['timestamp', 'player_name', 'game', 'controller', 'event_type', 'event_value']
+        fieldnames = ['timestamp', 'player_name', 'game', 'controller', 'event_type', 'event_value', 'elapsed_time']
         writer = csv.writer(csv_file)
 
         # Write header only if the file is new
@@ -93,7 +95,8 @@ def main():
                 elif event.type == pygame.JOYBUTTONDOWN:
                     pressed_button = event.button
                     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
-                    data = [timestamp, player_name, current_game, current_controller.get_name(), 'button', pressed_button]
+                    current_time = time.perf_counter() - initial_time
+                    data = [timestamp, player_name, current_game, current_controller.get_name(), 'button', pressed_button, current_time]
                     writer.writerow(data)
                     csv_file.flush()
                     log_text.insert(tk.END, f"[{timestamp}] Botón {pressed_button} presionado en {current_controller.get_name()}.\n")
@@ -103,7 +106,8 @@ def main():
                     value = event.value
                     if abs(value) > sensitivity_threshold:  # Only register significant movements
                         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
-                        data = [timestamp, player_name, current_game, current_controller.get_name(), f'axis_{axis}', value]
+                        current_time = time.perf_counter() - initial_time
+                        data = [timestamp, player_name, current_game, current_controller.get_name(), f'axis_{axis}', value, current_time]
                         writer.writerow(data)
                         csv_file.flush()
                         log_text.insert(tk.END, f"[{timestamp}] Movimiento en el eje {axis} con valor {value} en {current_controller.get_name()}.\n")
@@ -112,7 +116,8 @@ def main():
                     hat = event.hat
                     value = event.value
                     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
-                    data = [timestamp, player_name, current_game, current_controller.get_name(), f'hat_{hat}', value]
+                    current_time = time.perf_counter() - initial_time
+                    data = [timestamp, player_name, current_game, current_controller.get_name(), f'hat_{hat}', value, current_time]
                     writer.writerow(data)
                     csv_file.flush()
                     log_text.insert(tk.END, f"[{timestamp}] Movimiento en la cruceta {hat} con valor {value} en {current_controller.get_name()}.\n")
