@@ -24,6 +24,27 @@ def save_user_info(player_name, current_game, file_path):
         json.dump(user_info, json_file)
 
 def main():
+
+    #variables creation
+
+    """
+        The internal index of the buttons is as follows:
+        [0] -> real value
+        [1] -> given value
+    """
+    controller_buttons = {
+
+        'A': [0, 0], 'B': [1,1 ], 'X': [2, 2], 'Y': [3, 3],
+        'LB': [4, 4], 'RB': [5, 5],
+        'Back': [6, 6], 'Start': [7, 7], 'Home': [8, 8],
+        'L3': [9, 9], 'R3': [10, 10],
+        'Right': [(1,0), 11], 'Left': [(-1,0), 12], 'Up': [(0,1), 13], 'Down': [(0,-1), 14],
+        'LS_x': ['axis_0', 15], 'LS_y': ['axis_1', 16], 'RS_x': ['axis_3',17], 'RS_y': ['axis_4', 18],
+        'LT': ['axis_2', 19], 'RT': ['axis_5', 20],
+        'Up-left': [(-1,1), 21], 'Up-right': [(1,1), 22], 'Down-left': [(-1,-1), 23], 'Down-right': [(1,-1), 24],
+        'DPad_no_use': [(0,0), 25]
+    }
+
     # Initialize Pygame
     pygame.init()
     pygame.joystick.init()
@@ -72,7 +93,19 @@ def main():
     csv_file_name = f"{file_path}/{player_name}_buttons_pressed.csv"
     initial_time = time.perf_counter()
     with open(csv_file_name, mode='a', newline='') as csv_file:
-        fieldnames = ['date', 'player_name', 'game', 'controller', 'event_type', 'event_value', 'elapsed_time']
+        fieldnames = [
+            'date', 
+            'player_name', 
+            'game', 
+            'controller', 
+            
+            'event_type',
+            'event_name',
+            'event_real_value',
+            'event_given_value',
+            'elapsed_time'
+        ]
+
         writer = csv.writer(csv_file)
 
         # Write header only if the file is new
@@ -86,42 +119,131 @@ def main():
 
         def process_events():
             nonlocal running
+
+            controller_buttons_keys = list( controller_buttons.keys() )
+            controller_buttons_realValues = [ controller_buttons[key][0] for key in controller_buttons_keys ]
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
                         running = False
+
                 elif event.type == pygame.JOYBUTTONDOWN:
+
                     pressed_button = event.button
+                    event_name = None
+                    event_given_value = None
+
                     timestamp = datetime.now().strftime("%Y-%m-%d")
                     current_time = time.perf_counter() - initial_time
-                    data = [timestamp, player_name, current_game, current_controller.get_name(), 'button', pressed_button, current_time]
+                    current_time = round(current_time, 4)
+
+                    match pressed_button:
+                        case value if value in controller_buttons_realValues:
+                            event_name = controller_buttons_keys[ controller_buttons_realValues.index(value) ]
+                            event_given_value = controller_buttons[event_name][1]
+
+                    data = [
+
+                        #player info
+                        timestamp, 
+                        player_name, 
+                        current_game, 
+                        current_controller.get_name(), 
+                        
+                        #event info
+                        'button', #event type
+                        event_name, #event name
+                        pressed_button, #event real value
+                        event_given_value, #event given value 
+                        current_time #elapsed time
+                    ]
+                    
                     writer.writerow(data)
                     csv_file.flush()
                     log_text.insert(tk.END, f"[{timestamp}] Botón {pressed_button} presionado en {current_controller.get_name()}.\n")
                     log_text.yview(tk.END)
+                
                 elif event.type == pygame.JOYAXISMOTION:
+
                     axis = event.axis
-                    value = event.value
-                    if abs(value) > sensitivity_threshold:  # Only register significant movements
+                    axis_name = f'axis_{axis}'
+                    axis_value = round( event.value, 4)
+                    event_name = None
+                    event_given_value = None
+
+                    if abs(axis_value) > sensitivity_threshold:  # Only register significant movements
+
                         timestamp = datetime.now().strftime("%Y-%m-%d")
                         current_time = time.perf_counter() - initial_time
-                        data = [timestamp, player_name, current_game, current_controller.get_name(), f'axis_{axis}', value, current_time]
+                        current_time = round(current_time, 4)
+
+                        match axis_name:
+                            case value if value in controller_buttons_realValues:
+                                event_name = controller_buttons_keys[ controller_buttons_realValues.index(value) ]
+                                event_given_value = controller_buttons[event_name][1]
+
+                        data = [
+
+                            #player info
+                            timestamp, 
+                            player_name, 
+                            current_game, 
+                            current_controller.get_name(), 
+                            
+                            #event info
+                            f'axis_{axis}', #event type
+                            event_name, #event name 
+                            axis_value, #event real value
+                            event_given_value, #event given value 
+                            current_time #elapsed time
+                        ]
+                        
                         writer.writerow(data)
                         csv_file.flush()
                         log_text.insert(tk.END, f"[{timestamp}] Movimiento en el eje {axis} con valor {value} en {current_controller.get_name()}.\n")
                         log_text.yview(tk.END)
+                
                 elif event.type == pygame.JOYHATMOTION:
+
                     hat = event.hat
+                    hat_name = f'hat_{hat}'
                     value = event.value
+                    event_name = None
+                    event_given_value = None
+                    
                     timestamp = datetime.now().strftime("%Y-%m-%d")
                     current_time = time.perf_counter() - initial_time
-                    data = [timestamp, player_name, current_game, current_controller.get_name(), f'hat_{hat}', value, current_time]
+                    current_time = round(current_time, 4)
+
+                    match value:
+                            case value if value in controller_buttons_realValues:
+                                event_name = controller_buttons_keys[ controller_buttons_realValues.index(value) ]
+                                event_given_value = controller_buttons[event_name][1]
+
+                    data = [
+                        
+                        #player info
+                        timestamp, 
+                        player_name, 
+                        current_game, 
+                        current_controller.get_name(), 
+                        
+                        #event info
+                        f'hat_{hat}', #event type
+                        event_name, #event name
+                        value, #event real value
+                        event_given_value, #event given value
+                        current_time #elapsed time
+                    ]
+                    
                     writer.writerow(data)
                     csv_file.flush()
                     log_text.insert(tk.END, f"[{timestamp}] Movimiento en la cruceta {hat} con valor {value} en {current_controller.get_name()}.\n")
                     log_text.yview(tk.END)
+            
             if running:
                 root.after(100, process_events)  # Schedule the next call to process_events
 
